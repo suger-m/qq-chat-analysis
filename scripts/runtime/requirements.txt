@@ -1,0 +1,5 @@
+# Matches scripts/qq.py metadata; uv's qq.py.lock pins transitive dependencies.
+blackboxprotobuf==1.0.1
+cryptography>=43,<51
+jieba==0.42.1
+flask>=3.1,<4

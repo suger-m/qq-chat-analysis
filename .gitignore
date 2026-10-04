@@ -1,0 +1,28 @@
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Local QQ data and credentials
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+key_map.json
+settings.json
+.sync.lock
+qq_decrypt/
+data/
+.env
+.env.*
+
+# Local analysis material and generated reports
+work/
+outputs/
+context*.txt
+analysis*.json
+messages.*
+report*.html
+*.log
