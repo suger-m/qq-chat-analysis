@@ -1,6 +1,6 @@
 ---
 name: qq-chat-analysis
-description: 当用户需要读取、搜索、导出本地 QQ（NTQQ）群聊或私聊，或总结最新消息、生成群聊日报和 HTML 分析报告时使用。
+description: 当用户需要读取、搜索、导出本地 QQ（NTQQ）群聊或私聊，或按成员汇总单群/跨群消息、总结最新消息、生成群聊日报和 HTML 分析报告时使用。
 metadata:
   compatibility: Requires Python 3.10+ or uv; live NTQQ key extraction requires Windows and a logged-in local QQ process.
 ---
@@ -75,6 +75,20 @@ uv run --locked --script "<技能目录>/scripts/qq.py" context "目标群名" -
 写报告时直接使用，勿漏掉跨日凌晨时段。消息总数包含系统事件；发言人数按非系统消息的
 不同发送者计数，不能把发言条数当人数。引用行必须结合发言者和时间阅读。
 
+## 按成员总结（单群 / 所有群）
+
+用户要回顾某个人的发言时，先读 [成员总结指南](references/person-analysis.md)，使用
+`person` 指定成员及 `--group` / `--all-groups`，可加 `--date`、`--days` 或 `--from/--to`。
+
+```powershell
+& $qq person '<成员ID>' --group '目标群名' --days 7 -o person-context.txt
+& $qq person '<成员ID>' --all-groups --from '2026-10-01' --to '2026-10-21' -o person-context.txt
+```
+
+命令保留目标发言、同群相邻消息和引用关系。完整阅读原料，按角色区分目标观点与旁人上下文，
+跨群结论注明来源群和时间。总结前核对覆盖说明与数量限制；需要 HTML 时沿用报告流程，
+以 `person-context.txt` 作为校验原文。详细参数、范围口径与分批办法见成员总结指南。
+
 ## HTML 报告流程
 
 先读 [分析指南](references/analysis-guide.md)，再创建结构化 JSON。字段不确定时运行
@@ -119,6 +133,7 @@ uv run --locked --script "<技能目录>/scripts/qq.py" context "目标群名" -
 | 需求 | 命令 |
 |---|---|
 | 最新 N 条原料 | `context <群名> --limit N` |
+| 成员单群 / 跨群总结原料 | `person <成员ID> --group <群名>` / `person <成员ID> --all-groups` |
 | 逐条阅读 / 私聊 | `read <群名> -n N` / `read --c2c <成员ID> -n N` |
 | 搜索（最新消息兜底） | `search <词> -g <群名> --scan` |
 | 导出 | `export <群名> -o <文件> --fmt txt/jsonl/json/csv/md` |

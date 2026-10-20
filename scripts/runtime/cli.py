@@ -498,6 +498,15 @@ def cmd_export_report(args):
 
 # ── Agent 工作流: 取「内容」→ 渲染 HTML ──────────────────────────────────────
 
+def cmd_person(args):
+    """按成员获取单群/跨群总结原料，保留角色和必要上下文。"""
+    import qperson
+    try:
+        qperson.run(args, get_store, info)
+    except (ValueError, OSError) as exc:
+        raise SystemExit(qprivacy.diagnostic(str(exc))) from None
+
+
 def cmd_context(args):
     """导出适合 LLM 阅读的对话原料 (按话题间隙分段)。
 
@@ -802,6 +811,27 @@ def build_parser():
     p.add_argument("--limit", type=int, help="最多分析 N 条")
 
     # ── Agent 工作流: 取内容 → 渲染 HTML ──
+    # Member-focused source collection uses the same store and freshness rules.
+    import qperson
+    p = add("person", "按成员提取单群或所有群消息，附带必要上下文", cmd_person)
+    p.add_argument("person", help="QQ号、NT UID 或完整昵称/群名片（重名需指定ID）")
+    scope = p.add_mutually_exclusive_group(required=True)
+    scope.add_argument("-g", "--group", help="指定单个群（群号或唯一群名）")
+    scope.add_argument("--all-groups", action="store_true", help="当前账号所有本地有记录的群")
+    window = p.add_mutually_exclusive_group()
+    window.add_argument("--date", help="某天 YYYY-MM-DD")
+    window.add_argument("--days", type=qperson.positive, help="最近 N 天")
+    p.add_argument("--from", dest="from_date", help="起始日期或 ISO 日期时间，包含边界")
+    p.add_argument("--to", dest="to_date", help="结束日期包含整天；日期时间不含边界")
+    p.add_argument("--limit", type=qperson.nonnegative,
+                   help="筛选后目标发言的全局上限；0为全部；有时间范围默认全部，否则300")
+    p.add_argument("--context-before", type=qperson.nonnegative, default=3, help="每条目标发言前的上下文条数，默认3，最多100")
+    p.add_argument("--context-after", type=qperson.nonnegative, default=3, help="每条目标发言后的上下文条数，默认3，最多100")
+    p.add_argument("--context-minutes", type=qperson.positive, default=15, help="相邻上下文距离目标发言的最大分钟数，默认15")
+    p.add_argument("--max-chars", type=qperson.nonnegative, default=200000,
+                   help="文本原料长度保护；超出时报错而不截断；0为不限；JSON不限制")
+    p.add_argument("-o", "--out", help="UTF-8 原料输出路径，必须位于技能包外")
+
     p = add("context", "取对话原料 (分段后的原始记录, 供 Agent 阅读)", cmd_context)
     p.add_argument("group", help="群号或群名片段")
     p.add_argument("--date", help="某天 2026-10-02")

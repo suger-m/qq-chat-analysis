@@ -9,6 +9,7 @@ WorkBuddy 等支持该格式的客户端中安装，运行环境由 uv 或自备
 ## 能做什么
 
 - 读取群聊和私聊，按最新条数、日期或时间范围提取消息。
+- 按指定成员汇总单群或所有本地群的发言，支持时间范围，保留相邻对话和引用上下文。
 - 搜索关键词，导出 TXT、JSON、JSONL、CSV、Markdown。
 - 统计活跃时段、发言情况、热词、复读和多个群的差异。
 - 把消息原文交给 AI 归纳议题、问答和待办，再校验结构化结果并渲染 HTML。
@@ -121,6 +122,39 @@ Windows PowerShell 5.1 的默认重定向编码可能不适合后续读取，示
 HTML 默认尝试获取并内联头像，接口失败时使用首字头像。明确要求不联网取头像时可加
 `--no-avatar`。报告中保留的昵称与头像仍可能识别个人。
 
+## 按成员总结
+
+安装技能后可直接向 AI 提出：
+
+> 总结某位成员最近 7 天在指定群的发言，保留必要上下文。
+
+> 汇总某位成员在所有本地群中指定日期范围的消息，按主题总结并标注来源群和时间。
+
+成员优先使用 QQ 号或 NT UID；完整昵称也可查询，重名时需要明确 ID。命令示例：
+
+```powershell
+# 单群，最近 7 天
+& ./scripts/qq.ps1 person '<成员ID>' --group '目标群名' --days 7 -o person-context.txt
+
+# 所有本地群，日期范围（结束日期包含整天）
+& ./scripts/qq.ps1 person '<成员ID>' --all-groups --from '2026-10-01' --to '2026-10-21' -o person-context.txt
+```
+
+也可用 `uv run --locked --script scripts/qq.py person ...` 或 Bash 包装入口。
+AI 完整阅读原料后可直接总结；需要 HTML 时再编写分析 JSON，校验时使用
+`--context person-context.txt`，随后沿用 HTML 渲染命令。
+
+- 单群与所有群共用 `person` 入口，`--group` / `--all-groups` 必选其一。
+- 默认保留同群前后各 3 条、15 分钟内的上下文及引用信息；可用
+  `--context-before`、`--context-after`、`--context-minutes` 调整。
+- 有时间范围时默认提取全部目标发言；无时间范围时默认最近 300 条。`--limit` 是所有群
+  合并后目标发言的总上限，`--limit 0` 提取全部，旁人上下文另计。
+- `--json` 输出按群分组的结构化原料；`-o` 显式写入 UTF-8，路径须在技能包外。
+- “所有群”限当前 QQ 账号本地可读的群记录。查看覆盖说明，区分目标发言、上下文与
+  未输出/未能读取的内容。
+
+完整参数和总结规范见 [成员总结指南](references/person-analysis.md)。
+
 ## 常用命令
 
 下表中的参数均接在 `uv run --locked --script scripts/qq.py` 或包装入口之后。
@@ -129,6 +163,8 @@ HTML 默认尝试获取并内联头像，接口失败时使用首字头像。明
 |---|---|
 | 查看群列表 | `groups` |
 | 最新 300 条原料 | `context "目标群名" --limit 300 --max-chars 200000` |
+| 成员单群发言原料 | `person "<成员ID>" --group "目标群名" --days 7` |
+| 成员跨群发言原料 | `person "<成员ID>" --all-groups --days 7` |
 | 读取 20 条消息 | `read "目标群名" -n 20` |
 | 读取私聊 | `read --c2c <成员ID> -n 20` |
 | 搜索关键词 | `search "关键词" -g "目标群名"` |
